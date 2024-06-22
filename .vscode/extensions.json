@@ -1,5 +1,7 @@
 {
   "recommendations": [
-    "1yib.rust-bundle"
+    "1yib.rust-bundle",
+    "swellaby.vscode-rust-test-adapter",
+    "hbenl.vscode-test-explorer"
   ]
 }

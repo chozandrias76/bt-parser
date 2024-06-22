@@ -4,12 +4,6 @@ mod tests {
     use parsing::comment_line::comment_line;
     use super::*;
 
-    fn print_comments(comments: &Vec<String>) {
-        for comment in comments {
-            println!("{}", comment);
-        }
-    }
-
     fn assert_result_range_equal(
         actual: &Vec<String>,
         expected: &Vec<String>,
@@ -30,13 +24,14 @@ mod tests {
             Ok(("", " This is a comment_line"))
         );
         assert_eq!(comment_line("//Another comment_line"), Ok(("", "Another comment_line")));
+        assert_eq!(comment_line("//Foo\n{"), Ok(("{", "Foo")));
     }
 
     #[test]
     fn test_parse_bt() {
         let input = include_str!("D:/Elden Ring Tools/EldenRingSaveTemplate-master/SL2.bt");
 
-        let expected_comments = vec![
+        let expected_comment_lines = vec![
             r#"------------------------------------------------
 --- 010 Editor v14.0 Binary Template
 
@@ -119,18 +114,14 @@ mod tests {
 } PlayerGameData <size=0x1B0>;"#.to_string(),
         ];
 
-        let (remaining_input, (actual_comments, actual_typedefs)) = parsing::parse_bt(input).unwrap();
+        let (remaining_input, (actual_comment_lines, actual_typedefs)) = parsing::parse_bt(input).unwrap();
 
         assert_eq!(remaining_input, "");
-        assert_result_range_equal(&actual_comments, &expected_comments, 0..1);
-        assert_result_range_equal(&actual_comments, &expected_comments, 1..2);
-        assert_result_range_equal(&actual_comments, &expected_comments, 2..3);
+        assert_result_range_equal(&actual_comment_lines, &expected_comment_lines, 0..1);
+        assert_result_range_equal(&actual_comment_lines, &expected_comment_lines, 1..2);
+        assert_result_range_equal(&actual_comment_lines, &expected_comment_lines, 2..3);
 
         assert_result_range_equal(&actual_typedefs, &expected_typedefs, 0..1);
         assert_result_range_equal(&actual_typedefs, &expected_typedefs, 1..2);
-
-        // Print comments and typedefs for debugging
-        print_comments(&actual_comments);
-        print_comments(&actual_typedefs);
     }
 }

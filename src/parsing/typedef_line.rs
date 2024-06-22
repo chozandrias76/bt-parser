@@ -1,12 +1,13 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_until, take_while, take_while1},
-    character::complete::{char, multispace0, not_line_ending},
+    character::complete::{char, multispace0},
     combinator::recognize,
     multi::many0_count,
-    sequence::{delimited, preceded, tuple},
+    sequence::{delimited, tuple},
     IResult,
 };
+use crate::parsing::conditional_line::parse_conditional;
 
 fn parse_typedef_keyword(input: &str) -> IResult<&str, &str> {
     tag("typedef")(input)
@@ -26,6 +27,7 @@ fn parse_braced_block(input: &str) -> IResult<&str, &str> {
         many0_count(alt((
             delimited(char('{'), take_until("}"), char('}')),
             take_while1(|c| c != '{' && c != '}'),
+            parse_conditional,
         ))),
         char('}'),
     )))(input)
