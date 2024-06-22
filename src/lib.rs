@@ -1,41 +1,18 @@
-use nom::{
-    bytes::complete::{tag, take_while},
-    character::complete::{line_ending, not_line_ending},
-    combinator::{opt, recognize},
-    error::{Error, ErrorKind},
-    multi::many0,
-    sequence::tuple,
-    IResult,
-};
+pub mod parsing;
 
-fn parse_comment(input: &str) -> IResult<&str, &str> {
-    let (input, _) = tag("//")(input)?;
-    let (input, comment) = not_line_ending(input)?;
-    let (input, _) = opt(line_ending)(input)?;
-    Ok((input, comment))
-}
+use nom::
+    IResult
+;
+use parsing::any_line::any_line;
 
-fn parse_non_comment_line(input: &str) -> IResult<&str, &str> {
-    recognize(tuple((not_line_ending, opt(line_ending))))(input)
-}
 
-fn parse_any_line(input: &str) -> IResult<&str, Option<&str>> {
-    if let Ok((input, comment)) = parse_comment(input) {
-        Ok((input, Some(comment)))
-    } else if let Ok((input, _)) = parse_non_comment_line(input) {
-        Ok((input, None))
-    } else {
-        Err(nom::Err::Error(Error::new(input, ErrorKind::Tag)))
-    }
-}
-
-fn parse_bt(input: &str) -> IResult<&str, Vec<String>> {
+pub fn parse_bt(input: &str) -> IResult<&str, Vec<String>> {
     let mut comments = Vec::new();
     let mut current_group = Vec::new();
     let mut remaining_input = input;
     let mut last_input_length = remaining_input.len();
 
-    while let Ok((input, line)) = parse_any_line(remaining_input) {
+    while let Ok((input, line)) = any_line(remaining_input) {
         if let Some(comment) = line {
             current_group.push(comment.to_string());
         } else {
@@ -60,16 +37,18 @@ fn parse_bt(input: &str) -> IResult<&str, Vec<String>> {
 
 #[cfg(test)]
 mod tests {
+    use parsing::comment::comment;
+
     use super::*;
 
     #[test]
     fn test_parse_comment() {
         assert_eq!(
-            parse_comment("// This is a comment\n"),
+            comment("// This is a comment\n"),
             Ok(("", " This is a comment"))
         );
         assert_eq!(
-            parse_comment("//Another comment"),
+            comment("//Another comment"),
             Ok(("", "Another comment"))
         );
     }
