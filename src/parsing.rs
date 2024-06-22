@@ -1,7 +1,8 @@
 pub mod any_line;
-pub mod comment;
+pub mod comment_line;
 pub mod non_comment_line;
 pub mod typedef_line;
+pub mod conditional_line;
 
 use nom::IResult;
 

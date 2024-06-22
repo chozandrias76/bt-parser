@@ -1,7 +1,7 @@
 pub mod parsing;
 #[cfg(test)]
 mod tests {
-    use parsing::comment::comment;
+    use parsing::comment_line::comment_line;
     use super::*;
 
     fn print_comments(comments: &Vec<String>) {
@@ -24,12 +24,12 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_comment() {
+    fn test_parse_comment_line() {
         assert_eq!(
-            comment("// This is a comment\n"),
-            Ok(("", " This is a comment"))
+            comment_line("// This is a comment_line\n"),
+            Ok(("", " This is a comment_line"))
         );
-        assert_eq!(comment("//Another comment"), Ok(("", "Another comment")));
+        assert_eq!(comment_line("//Another comment_line"), Ok(("", "Another comment_line")));
     }
 
     #[test]
