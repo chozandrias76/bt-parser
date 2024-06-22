@@ -10,7 +10,7 @@ mod tests {
         }
     }
 
-    fn assert_comments_equal(
+    fn assert_result_range_equal(
         actual: &Vec<String>,
         expected: &Vec<String>,
         range: std::ops::Range<usize>,
@@ -122,12 +122,12 @@ mod tests {
         let (remaining_input, (actual_comments, actual_typedefs)) = parsing::parse_bt(input).unwrap();
 
         assert_eq!(remaining_input, "");
-        assert_comments_equal(&actual_comments, &expected_comments, 0..1);
-        assert_comments_equal(&actual_comments, &expected_comments, 1..2);
-        assert_comments_equal(&actual_comments, &expected_comments, 2..3);
+        assert_result_range_equal(&actual_comments, &expected_comments, 0..1);
+        assert_result_range_equal(&actual_comments, &expected_comments, 1..2);
+        assert_result_range_equal(&actual_comments, &expected_comments, 2..3);
 
-        assert_comments_equal(&actual_typedefs, &expected_typedefs, 0..1);
-        assert_comments_equal(&actual_typedefs, &expected_typedefs, 1..2);
+        assert_result_range_equal(&actual_typedefs, &expected_typedefs, 0..1);
+        assert_result_range_equal(&actual_typedefs, &expected_typedefs, 1..2);
 
         // Print comments and typedefs for debugging
         print_comments(&actual_comments);
