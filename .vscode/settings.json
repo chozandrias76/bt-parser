@@ -1,0 +1,6 @@
+{
+  "lldb.launch.sourceLanguages": [
+    "rust"
+  ],
+  "lldb.verboseLogging": true
+}

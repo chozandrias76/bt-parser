@@ -1,8 +1,8 @@
 use nom::{
-    bytes::complete::tag,
-    character::complete::{line_ending, not_line_ending},
-    combinator::opt,
     IResult,
+    bytes::complete::tag,
+    character::complete::{not_line_ending, line_ending},
+    combinator::opt,
 };
 
 pub fn comment(input: &str) -> IResult<&str, &str> {
