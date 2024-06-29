@@ -1,4 +1,6 @@
 pub mod parsing;
+pub mod types;
+
 #[cfg(test)]
 mod tests {
     use parsing::comment_line::comment_line;
