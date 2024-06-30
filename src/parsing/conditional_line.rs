@@ -1,20 +1,23 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_while1},
-    character::complete::{char, multispace0},
+    bytes::complete::{tag, take_until, take_until1, take_while1},
+    character::complete::{char, line_ending, multispace0, not_line_ending, space0},
     combinator::peek,
     error::context,
+    multi::{many0, many1},
     sequence::{preceded, tuple},
     IResult,
 };
 
-use crate::types::nested::Nested;
+use crate::{ast::Expression, types::nested::Nested};
+use crate::ast::Expression::{And, Or, Equals, NotEquals, GreaterThan, LessThan, BinaryAnd};
 
 fn parse_nested_parens(input: &str) -> IResult<&str, Vec<&str>> {
     let mut stack = Vec::new();
     let mut start_index = None;
     let mut nested_expressions = Vec::new();
     let mut rest = "";
+    let mut is_nested = false;
 
     for (index, character) in input.char_indices() {
         match character {
@@ -23,6 +26,7 @@ fn parse_nested_parens(input: &str) -> IResult<&str, Vec<&str>> {
                     start_index = Some(index);
                 }
                 stack.push(character);
+                is_nested = false;
             }
             ')' => {
                 if let Some(_) = stack.pop() {
@@ -30,7 +34,8 @@ fn parse_nested_parens(input: &str) -> IResult<&str, Vec<&str>> {
                         if let Some(start) = start_index {
                             // Capture the expression excluding the outermost parentheses
                             rest = &input[index + character.len_utf8()..];
-                            nested_expressions.push(input[start + 1..index].trim());
+                            let including_parens_range = start..index + 1;
+                            nested_expressions.push(input[including_parens_range].trim());
                         }
                         start_index = None;
                     }
@@ -41,12 +46,13 @@ fn parse_nested_parens(input: &str) -> IResult<&str, Vec<&str>> {
                         nom::error::ErrorKind::Fail
                     )));
                 }
+                is_nested = true;
             }
             _ => {}
         }
     }
 
-    if stack.is_empty() {
+    if stack.is_empty() && is_nested{
         Ok((rest.trim_start(), nested_expressions))
     } else {
         // Handle unbalanced parentheses: early return or error
@@ -64,9 +70,9 @@ mod tests_parse_nested_parens {
 
     #[test]
     fn test_parse_nested_parens1() {
-        let input = r#"( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))"#;
+        let input = r#"( (ItemID != 0) && ((ItemID & 0xf0000000) == 0) )"#;
         let expected_rest = r#""#;
-        let expected_result = r#"(ItemID != 0) && ((ItemID & 0xf0000000) == 0)"#;
+        let expected_result = r#"( (ItemID != 0) && ((ItemID & 0xf0000000) == 0) )"#;
 
         let (rest, result) = parse_nested_parens(input).unwrap();
 
@@ -78,7 +84,7 @@ mod tests_parse_nested_parens {
     fn test_parse_nested_parens2() {
         let input = r#"( ItemID != 0 )"#;
         let expected_rest = r#""#;
-        let expected_result = r#"ItemID != 0"#;
+        let expected_result = r#"( ItemID != 0 )"#;
 
         let (rest, result) = parse_nested_parens(input).unwrap();
 
@@ -92,7 +98,7 @@ mod tests_parse_nested_parens {
     }"#;
         let expected_rest = r#"{
     }"#;
-        let expected_result = r#"(ItemID != 0)"#;
+        let expected_result = r#"( (ItemID != 0) )"#;
 
         let (rest, result) = parse_nested_parens(input).unwrap();
 
@@ -134,6 +140,7 @@ mod conditional_line_tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
+    #[test]
     fn test_conditional_line1() {
         let input_if_else = r#"if ( (ItemID != 0) && ((ItemID & 0xf0000000) == 0)) { 
           int32 unk; 
@@ -163,20 +170,7 @@ mod conditional_line_tests {
                 Nested::List(vec![
                     Nested::Text("if".into()),
                     Nested::List(vec![
-                        Nested::List(vec![
-                            Nested::Text("ItemID".into()),
-                            Nested::Text("!=".into()),
-                            Nested::Text("0".into())
-                        ]),
-                        Nested::List(vec![
-                            Nested::List(vec![
-                                Nested::Text("ItemID".into()),
-                                Nested::Text("&".into()),
-                                Nested::Text("0xf0000000".into())
-                            ]),
-                            Nested::Text("==".into()),
-                            Nested::Text("0".into())
-                        ])
+                        Nested::Text("( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))".into()),
                     ]),
                 ]) // "if ( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))".into()
             ))
@@ -201,7 +195,7 @@ mod conditional_line_tests {
             result,
             vec_nested![
                 expected_result.into(),
-                vec_nested!["(ItemID != 0) && ((ItemID & 0xf0000000) == 0x10000000)"]
+                vec_nested!["((ItemID != 0) && ((ItemID & 0xf0000000) == 0x10000000))"]
             ]
             .into()
         );
