@@ -30,7 +30,7 @@ fn operator(input: &str) -> IResult<&str, &str> {
         tag(Expression::NotEquals.to_str()),
         tag(Expression::GreaterThan.to_str()),
         tag(Expression::LessThan.to_str()),
-        tag(Expression::BitAnd.to_str()),
+        tag(Expression::BinaryAnd.to_str()),
     )))(input)
     .map(|(i, o)| (i.trim(), o.trim()))
 }
