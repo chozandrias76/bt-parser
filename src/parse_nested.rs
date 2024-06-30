@@ -9,7 +9,7 @@ use nom::{
     AsChar, IResult, Parser,
 };
 
-use crate::ast::BinaryOp;
+use crate::ast::Expression;
 
 fn ws<'a, F: 'a, O>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O>
 where
@@ -24,13 +24,13 @@ fn identifier(input: &str) -> IResult<&str, &str> {
 
 fn operator(input: &str) -> IResult<&str, &str> {
     ws(alt((
-        tag(BinaryOp::And.to_str()),
-        tag(BinaryOp::Or.to_str()),
-        tag(BinaryOp::Equals.to_str()),
-        tag(BinaryOp::NotEquals.to_str()),
-        tag(BinaryOp::GreaterThan.to_str()),
-        tag(BinaryOp::LessThan.to_str()),
-        tag(BinaryOp::BitAnd.to_str()),
+        tag(Expression::And.to_str()),
+        tag(Expression::Or.to_str()),
+        tag(Expression::Equals.to_str()),
+        tag(Expression::NotEquals.to_str()),
+        tag(Expression::GreaterThan.to_str()),
+        tag(Expression::LessThan.to_str()),
+        tag(Expression::BitAnd.to_str()),
     )))(input)
     .map(|(i, o)| (i.trim(), o.trim()))
 }
@@ -185,7 +185,12 @@ mod tests {
             expression_a(" ItemID != 0 "),
             Ok(("", vec!["ItemID", "!=", "0"]))
         );
-
+        Expression::all_expressions().iter().for_each(|op| {
+            assert_eq!(
+                expression_a(&format!("ItemID {} 0", op)),
+                Ok(("", vec!["ItemID", op, "0"]))
+            )
+        });
         assert_eq!(
             expression_a("FooBar == 0x0"),
             Ok(("", vec!["FooBar", "==", "0x0"]))

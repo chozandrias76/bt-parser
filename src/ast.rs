@@ -5,12 +5,12 @@ pub enum Expr {
     Identifier(String),
     Literal(i32),
     FunctionCall { name: String, args: Vec<Expr> },
-    BinaryOp { left: Box<Expr>, op: BinaryOp, right: Box<Expr> },
+    BinaryOp { left: Box<Expr>, op: Expression, right: Box<Expr> },
     Parens(Box<Expr>),
 }
 
 #[derive(Debug, PartialEq)]
-pub enum BinaryOp {
+pub enum Expression {
     And,
     Or,
     Equals,
@@ -18,44 +18,63 @@ pub enum BinaryOp {
     GreaterThan,
     LessThan,
     BitAnd,
+    GreaterThanOrEqualTo,
+    LessThanOrEqualTo,
 }
 
-impl BinaryOp {
+impl Expression {
     pub fn to_str(&self) -> &'static str {
         match self {
-            BinaryOp::And => "&&",
-            BinaryOp::Or => "||",
-            BinaryOp::Equals => "==",
-            BinaryOp::NotEquals => "!=",
-            BinaryOp::GreaterThan => ">",
-            BinaryOp::LessThan => "<",
-            BinaryOp::BitAnd => "&",
+            Self::And => "&&",
+            Self::Or => "||",
+            Self::Equals => "==",
+            Self::NotEquals => "!=",
+            Self::GreaterThan => ">",
+            Self::LessThan => "<",
+            Self::BitAnd => "&",
+            Self::GreaterThanOrEqualTo => ">=",
+            Self::LessThanOrEqualTo => "<=",
         }
     }
 
-    pub fn all_operators() -> &'static [&'static str] {
+    pub fn variants() -> &'static [Self] {
+        use Expression::*;
         &[
-            "&&", "||", "==", "!=", ">", "<", "&",
+            And,
+            Or,
+            Equals,
+            NotEquals,
+            GreaterThan,
+            LessThan,
+            BitAnd,
+        ]
+    }
+
+    pub fn all_expressions() -> Vec<&'static str> {
+        vec![
+            Expression::And.to_str(), Expression::Or.to_str(), Expression::Equals.to_str(), Expression::NotEquals.to_str(), Expression::GreaterThan.to_str(), Expression::LessThan.to_str(), Expression::BitAnd.to_str(),
         ]
     }
 }
 
-impl InputLength for BinaryOp {
+impl InputLength for Expression {
     fn input_len(&self) -> usize {
         self.to_str().len()
     }
 }
 
-impl Clone for BinaryOp {
+impl Clone for Expression {
     fn clone(&self) -> Self {
         match self {
-            BinaryOp::And => BinaryOp::And,
-            BinaryOp::Or => BinaryOp::Or,
-            BinaryOp::Equals => BinaryOp::Equals,
-            BinaryOp::NotEquals => BinaryOp::NotEquals,
-            BinaryOp::GreaterThan => BinaryOp::GreaterThan,
-            BinaryOp::LessThan => BinaryOp::LessThan,
-            BinaryOp::BitAnd => BinaryOp::BitAnd,
+            Expression::And => Expression::And,
+            Expression::Or => Expression::Or,
+            Expression::Equals => Expression::Equals,
+            Expression::NotEquals => Expression::NotEquals,
+            Expression::GreaterThan => Expression::GreaterThan,
+            Expression::LessThan => Expression::LessThan,
+            Expression::BitAnd => Expression::BitAnd,
+            Expression::GreaterThanOrEqualTo => Expression::GreaterThanOrEqualTo,
+            Expression::LessThanOrEqualTo => Expression::LessThanOrEqualTo,
         }
     }
 }
