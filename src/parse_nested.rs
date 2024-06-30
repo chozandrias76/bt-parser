@@ -17,7 +17,7 @@ where
 }
 
 fn identifier(input: &str) -> IResult<&str, &str> {
-    ws(tag("ItemID"))(input).map(|(i, o)| (i.trim(), o.trim())) // Simplified for this example
+    ws(take_while1(|c: char| c.is_ascii_alphanumeric()))(input).map(|(i, o)| (i.trim(), o.trim()))
 }
 
 fn operator(input: &str) -> IResult<&str, &str> {
@@ -72,7 +72,11 @@ fn number(input: &str) -> IResult<&str, &str> {
 }
 
 fn number_with_paren(input: &str) -> IResult<&str, &str> {
-    ws(alt((alt((hex_number, decimal_number)), alt((hex_number_with_paren, decimal_number_with_paren)))))(input).map(|(i, o)| (i.trim(), o.trim()))
+    ws(alt((
+        alt((hex_number, decimal_number)),
+        alt((hex_number_with_paren, decimal_number_with_paren)),
+    )))(input)
+    .map(|(i, o)| (i.trim(), o.trim()))
 }
 
 fn expression_a(input: &str) -> IResult<&str, Vec<&str>> {
@@ -169,6 +173,11 @@ mod tests {
         assert_eq!(
             expression_a(" ItemID != 0 "),
             Ok(("", vec!["ItemID", "!=", "0"]))
+        );
+
+        assert_eq!(
+            expression_a("FooBar == 0x0"),
+            Ok(("", vec!["FooBar", "==", "0x0"]))
         );
     }
 
