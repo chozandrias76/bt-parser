@@ -9,6 +9,8 @@ use nom::{
     AsChar, IResult, Parser,
 };
 
+use crate::ast::BinaryOp;
+
 fn ws<'a, F: 'a, O>(inner: F) -> impl FnMut(&'a str) -> IResult<&'a str, O>
 where
     F: FnMut(&'a str) -> IResult<&'a str, O>,
@@ -21,7 +23,16 @@ fn identifier(input: &str) -> IResult<&str, &str> {
 }
 
 fn operator(input: &str) -> IResult<&str, &str> {
-    ws(alt((tag("!="), tag("=="), tag("&"), tag("&&"))))(input).map(|(i, o)| (i.trim(), o.trim()))
+    ws(alt((
+        tag(BinaryOp::And.to_str()),
+        tag(BinaryOp::Or.to_str()),
+        tag(BinaryOp::Equals.to_str()),
+        tag(BinaryOp::NotEquals.to_str()),
+        tag(BinaryOp::GreaterThan.to_str()),
+        tag(BinaryOp::LessThan.to_str()),
+        tag(BinaryOp::BitAnd.to_str()),
+    )))(input)
+    .map(|(i, o)| (i.trim(), o.trim()))
 }
 
 fn hex_number(input: &str) -> IResult<&str, &str> {
