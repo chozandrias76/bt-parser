@@ -73,7 +73,7 @@ fn parse_if_else_blocks(input: &str) -> IResult<&str, &str> {
   )))(input)
 }
 
-pub fn parse_conditional(input: &str) -> IResult<&str, &str> {
+pub fn conditional_line(input: &str) -> IResult<&str, &str> {
   parse_if_else_blocks(input)
 }
 
@@ -94,6 +94,6 @@ mod tests {
           int32 unk2;
       }"#;
 
-      assert_eq!(parse_conditional(input_if_else), Ok(("", input_if_else)));
+      assert_eq!(conditional_line(input_if_else), Ok(("", input_if_else)));
   }
 }
