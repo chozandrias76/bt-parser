@@ -8,7 +8,9 @@ use nom::{
     IResult,
 };
 
-pub fn conditional_line(input: &str) -> IResult<&str, &str> {
+use crate::types::nested::Nested;
+
+pub fn conditional_line(input: &str) -> IResult<&str, Nested> {
     let mut parser = context(
         "conditional_line",
         recognize(tuple((
@@ -17,7 +19,7 @@ pub fn conditional_line(input: &str) -> IResult<&str, &str> {
             take_while1(|c: char| c != '{'),
         ))),
     );
-    parser(input).map(|(input, s)| (input, s.trim_end()))
+    parser(input).map(|(input, s)| (input, s.trim_end().into()))
 }
 
 #[cfg(test)]
@@ -52,7 +54,7 @@ mod tests {
             conditional_line(input_if_else),
             Ok((
                 expected_rest,
-                "if ( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))"
+                "if ( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))".into()
             ))
         );
     }
@@ -72,7 +74,7 @@ mod tests {
             conditional_line(input_if_else),
             Ok((
                 expected_rest,
-                "else if((ItemID != 0) && ((ItemID & 0xf0000000) == 0x10000000))"
+                "else if((ItemID != 0) && ((ItemID & 0xf0000000) == 0x10000000))".into()
             ))
         );
     }
