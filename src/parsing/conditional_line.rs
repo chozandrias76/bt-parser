@@ -1,16 +1,14 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_until, take_until1, take_while1},
-    character::complete::{char, line_ending, multispace0, not_line_ending, space0},
+    bytes::complete::{tag, take_while1},
+    character::complete::{char, multispace0},
     combinator::peek,
     error::context,
-    multi::{many0, many1},
     sequence::{preceded, tuple},
     IResult,
 };
 
-use crate::{ast::Expression, types::nested::Nested};
-use crate::ast::Expression::{And, Or, Equals, NotEquals, GreaterThan, LessThan, BinaryAnd};
+use crate::types::nested::Nested;
 
 fn parse_nested_parens(input: &str) -> IResult<&str, Vec<&str>> {
     let mut stack = Vec::new();
