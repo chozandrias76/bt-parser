@@ -10,102 +10,7 @@ use nom::{
 
 use crate::types::nested::Nested;
 
-fn parse_nested_parens(input: &str) -> IResult<&str, Vec<&str>> {
-    let mut stack = Vec::new();
-    let mut start_index = None;
-    let mut nested_expressions = Vec::new();
-    let mut rest = "";
-    let mut is_nested = false;
-
-    for (index, character) in input.char_indices() {
-        match character {
-            '(' => {
-                if stack.is_empty() {
-                    start_index = Some(index);
-                }
-                stack.push(character);
-                is_nested = false;
-            }
-            ')' => {
-                if let Some(_) = stack.pop() {
-                    if stack.is_empty() {
-                        if let Some(start) = start_index {
-                            // Capture the expression excluding the outermost parentheses
-                            rest = &input[index + character.len_utf8()..];
-                            let including_parens_range = start..index + 1;
-                            nested_expressions.push(input[including_parens_range].trim());
-                        }
-                        start_index = None;
-                    }
-                } else {
-                    // Handle unbalanced parentheses: early return or error
-                    return Err(nom::Err::Error(nom::error_position!(
-                        rest,
-                        nom::error::ErrorKind::Fail
-                    )));
-                }
-                is_nested = true;
-            }
-            _ => {}
-        }
-    }
-
-    if stack.is_empty() && is_nested{
-        Ok((rest.trim_start(), nested_expressions))
-    } else {
-        // Handle unbalanced parentheses: early return or error
-        Err(nom::Err::Error(nom::error_position!(
-            input,
-            nom::error::ErrorKind::Fail
-        )))
-    }
-}
-
-#[cfg(test)]
-mod tests_parse_nested_parens {
-    use super::*;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn test_parse_nested_parens1() {
-        let input = r#"( (ItemID != 0) && ((ItemID & 0xf0000000) == 0) )"#;
-        let expected_rest = r#""#;
-        let expected_result = r#"( (ItemID != 0) && ((ItemID & 0xf0000000) == 0) )"#;
-
-        let (rest, result) = parse_nested_parens(input).unwrap();
-
-        assert_eq!(rest, expected_rest);
-        assert_eq!(result, vec![expected_result]);
-    }
-
-    #[test]
-    fn test_parse_nested_parens2() {
-        let input = r#"( ItemID != 0 )"#;
-        let expected_rest = r#""#;
-        let expected_result = r#"( ItemID != 0 )"#;
-
-        let (rest, result) = parse_nested_parens(input).unwrap();
-
-        assert_eq!(rest, expected_rest);
-        assert_eq!(result, vec![expected_result]);
-    }
-
-    #[test]
-    fn test_parse_nested_parens3() {
-        let input = r#"( (ItemID != 0) ) {
-    }"#;
-        let expected_rest = r#"{
-    }"#;
-        let expected_result = r#"( (ItemID != 0) )"#;
-
-        let (rest, result) = parse_nested_parens(input).unwrap();
-
-        assert_eq!(rest, expected_rest);
-        assert_eq!(result, vec![expected_result]);
-    }
-}
-
-pub fn conditional_line(input: &str) -> IResult<&str, Nested> {
+fn parse_conditional_line(input: &str) -> IResult<&str, (&str, char, &str)> {
     let mut parser = context(
         "conditional_line",
         tuple((
@@ -114,27 +19,45 @@ pub fn conditional_line(input: &str) -> IResult<&str, Nested> {
             take_while1(|c: char| c != '{'),
         )),
     );
-    parser(input).map(|(input, s)| {
-        let (if_else_or_else_if, _paren, inside_parens) = s;
-        let (_rest, nested_parens) = parse_nested_parens(inside_parens.trim()).unwrap();
-        let nested_parens_as_nested = nested_parens
-            .iter()
-            .map(|s| return Nested::Text(s.to_string()))
-            .collect();
-        return (
-            input,
-            Nested::List(vec![
-                if_else_or_else_if.trim_end().into(),
-                nested_parens_as_nested,
-            ]),
-        );
+    parser(input)
+}
+
+/// Parses a conditional line from the given input string.
+///
+/// This function is designed to parse conditional lines, specifically targeting
+/// syntaxes like `if` and `else if` followed by conditions enclosed in parentheses.
+/// # Example
+///
+/// ```
+/// use nom::{IResult, error::ErrorKind};
+/// use bt_parser::parsing::conditional_line::conditional_line;
+/// use bt_parser::types::nested::Nested;
+///
+/// let input = "if ( (ItemID != 0) && ((ItemID & 0xf0000000) == 0)) {";
+/// let result = conditional_line(input).unwrap();
+/// assert_eq!(result, ("{", Nested::List(vec!["if".into(),"( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))".into(),].into())));
+/// ```
+///
+/// # Parameters
+/// - `input`: A string slice that holds the input to be parsed.
+///
+/// # Returns
+/// - `IResult<&str, Nested>`: On success, returns `Ok` wrapping the remaining input
+///   and a tuple containing the matched keyword (`"if"` or `"else if"`),
+///   and the condition string up to (but not including) the opening
+///   curly brace `{`. On failure, returns an error wrapped in `Err`.
+pub fn conditional_line(input: &str) -> IResult<&str, Nested> {
+    parse_conditional_line(input).map(|(rest, result)| {
+        let (keyword, _, condition) = result;
+        (
+            rest.trim(),
+            vec![keyword.into(), condition.trim().into()].into(),
+        )
     })
 }
 
 #[cfg(test)]
 mod conditional_line_tests {
-    use crate::vec_nested;
-
     use super::*;
     use pretty_assertions::assert_eq;
 
@@ -150,6 +73,14 @@ mod conditional_line_tests {
           int32 unk;
           int32 unk2;
       }"#;
+        let expected_result = Nested::List(
+            vec![
+                "if".into(),
+                "( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))".into(),
+            ]
+            .into(),
+        );
+
         let expected_rest = r#"{ 
           int32 unk; 
           int32 unk2;
@@ -163,15 +94,7 @@ mod conditional_line_tests {
 
         assert_eq!(
             conditional_line(input_if_else),
-            Ok((
-                expected_rest,
-                Nested::List(vec![
-                    Nested::Text("if".into()),
-                    Nested::List(vec![
-                        Nested::Text("( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))".into()),
-                    ]),
-                ]) // "if ( (ItemID != 0) && ((ItemID & 0xf0000000) == 0))".into()
-            ))
+            Ok((expected_rest, expected_result))
         );
     }
 
@@ -181,7 +104,13 @@ mod conditional_line_tests {
           int32 unk;
           int32 unk2;
       }"#;
-        let expected_result = r#"else if"#;
+        let expected_result = Nested::List(
+            vec![
+                "else if".into(),
+                "((ItemID != 0) && ((ItemID & 0xf0000000) == 0x10000000))".into(),
+            ]
+            .into(),
+        );
         let expected_rest = r#"{
           int32 unk;
           int32 unk2;
@@ -189,13 +118,6 @@ mod conditional_line_tests {
         let (rest, result) = conditional_line(input_if_else).unwrap();
 
         assert_eq!(rest, expected_rest);
-        assert_eq!(
-            result,
-            vec_nested![
-                expected_result.into(),
-                vec_nested!["((ItemID != 0) && ((ItemID & 0xf0000000) == 0x10000000))"]
-            ]
-            .into()
-        );
+        assert_eq!(result, expected_result);
     }
 }

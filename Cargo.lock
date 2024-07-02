@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "bt-parser"
+name = "bt_parser"
 version = "0.1.0"
 dependencies = [
  "nom",
