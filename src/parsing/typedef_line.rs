@@ -1,3 +1,5 @@
+pub mod typedef_member;
+pub mod typedef_members;
 use crate::types::nested::Nested;
 use nom::{
     branch::alt,
