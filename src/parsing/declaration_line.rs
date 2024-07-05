@@ -1,3 +1,5 @@
+pub mod special_attributes;
+
 use nom::{
     bytes::complete::{tag, take_while1},
     character::complete::{alphanumeric1, multispace0, multispace1},
@@ -8,8 +10,6 @@ use nom::{
 };
 
 use crate::types::nested::Nested;
-use nom::error::Error;
-use nom::Err;
 
 fn type_parser(input: &str) -> IResult<&str, &str> {
     take_while1(|c: char| c.is_alphanumeric() || c == '_')(input)
@@ -37,7 +37,7 @@ fn parse_declaration_content(input: &str) -> IResult<&str, (&str, &str, Option<&
 
 fn parse_declaration_statement(
     input: &str,
-) -> Result<(&str, (&str, &str, Option<&str>)), Err<Error<&str>>> {
+) -> IResult<&str, (&str, &str, Option<&str>)> {
     let mut parser = context(
         "declaration_statement",
         delimited(multispace0, parse_declaration_content, tag(";")),
@@ -47,7 +47,7 @@ fn parse_declaration_statement(
 
 pub fn declaration_statement(
     input: &str,
-) -> Result<(&str, Nested), nom::Err<nom::error::Error<&str>>> {
+) -> IResult<&str, Nested> {
     parse_declaration_statement(input).map(|(rest, result)| {
         let (type_, identifier, special_attributes) = result;
         let format_as_nested: Nested = match special_attributes.map(|f| f.into()) {
