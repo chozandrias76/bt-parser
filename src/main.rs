@@ -1,7 +1,11 @@
-use bt_parser::parsing::{comment_line::comment_line, typedef_line::typedef_line};
+use std::fs::read_to_string;
+
+use bt_parser::parsing::comment_line::comment_line;
 
 pub fn main() {
-    let input = include_str!("D:/Elden Ring Tools/EldenRingSaveTemplate-master/SL2.bt");
+    let path = "D:/Elden Ring Tools/EldenRingSaveTemplate-master/SL2.bt";
+    let input = read_to_string(path).unwrap();
+    let (input, _) = comment_line(input.as_str()).unwrap();
     let (input, _) = comment_line(input).unwrap();
     let (input, _) = comment_line(input).unwrap();
     let (input, _) = comment_line(input).unwrap();
@@ -13,13 +17,6 @@ pub fn main() {
     let (input, _) = comment_line(input).unwrap();
     let (input, _) = comment_line(input).unwrap();
     let (input, _) = comment_line(input).unwrap();
-    let (input, _) = comment_line(input).unwrap();
-    let (input, _) = comment_line(input).unwrap();
-    let (input, _) = comment_line(input).unwrap();
-    let (input, _) = comment_line(input).unwrap();
-    let (input, _) = comment_line(input).unwrap();
-    let (input, _) = comment_line(input).unwrap();
-    let (_input, item_struct) = typedef_line(input).unwrap();
 
-    println!("Item: {:?}", item_struct);
+    println!("input: {:?}", input);
 }

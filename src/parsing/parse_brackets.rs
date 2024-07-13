@@ -58,7 +58,6 @@ pub fn parse_brackets(input: &str) -> IResult<&str, &str> {
             rest[range].trim()
         } else {
             rest
-        
         };
         Ok((rest.trim_start(), contents))
     } else {
